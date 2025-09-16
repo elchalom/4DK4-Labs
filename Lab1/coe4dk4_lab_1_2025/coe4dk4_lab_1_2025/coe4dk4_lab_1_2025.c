@@ -146,7 +146,8 @@ int main()
   setvbuf(stdout, NULL, _IONBF, 0);
 
   /* Define arrival rates: 0.01 to 0.09 (inclusive) step 0.01) */
-  const double rates[] = {0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09};
+  // const double rates[] = {0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09};
+  const double rates[] = {0.005, 0.010, 0.015, 0.020, 0.025, 0.028, 0.030, 0.032, 0.033};
   const int NRATES = (int)(sizeof(rates)/sizeof(rates[0]));
 
   /* Ten seeds including the student number 400430923. */
@@ -155,8 +156,8 @@ int main()
     1357911u, 24681012u, 31415926u, 27182818u, 16180339u
   };
 
-  /* Print CSV header. */
-  printf("arrival_rate,seed,utilization,fraction_served,mean_number_in_system,mean_delay,total_served,total_arrived,clock_time\n");
+  /* Print TSV header (tab-delimited for robust Excel import) */
+  printf("arrival_rate\tseed\tutilization\tfraction_served\tmean_number_in_system\tmean_delay\ttotal_served\ttotal_arrived\tclock_time\n");
   {
     int i, s;
     for (i = 0; i < NRATES; i++) {
@@ -167,17 +168,17 @@ int main()
       Results r = run_one(rate, seeds[s], 0 /* verbose */);
       sum_mean_delay += r.mean_delay;
 
-      /* Per-run CSV row */
-      printf("%.5f,%u,%.10f,%.10f,%.10f,%.10f,%ld,%ld,%.10f\n",
+      /* Per-run TSV row (tab-delimited, CRLF line ending) */
+      printf("%.5f\t%u\t%.10f\t%.10f\t%.10f\t%.10f\t%ld\t%ld\t%.10f\n",
              rate, seeds[s], r.utilization, r.fraction_served,
              r.mean_number_in_system, r.mean_delay,
              r.total_served, r.total_arrived, r.clock_time);
       fflush(stdout);
       }
 
-    /* Per-rate average summary row (prefixed with AVG for easy filtering). */
+  /* Per-rate average summary row (prefixed with AVG for easy filtering). */
     double avg_mean_delay = sum_mean_delay / 10.0;
-    printf("AVG,%.5f,%d_seeds,avg_mean_delay,%.10f\n", rate, 10, avg_mean_delay);
+  printf("AVG\t%.5f\t%d_seeds\tavg_mean_delay\t%.10f\r\n", rate, 10, avg_mean_delay);
     fflush(stdout);
 
     /* Progress message to stderr so it doesn't pollute CSV. */
@@ -185,7 +186,6 @@ int main()
     }
   }
   return 0;
-
 }
 
 
