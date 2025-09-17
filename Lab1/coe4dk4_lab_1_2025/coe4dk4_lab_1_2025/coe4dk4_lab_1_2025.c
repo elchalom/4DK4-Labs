@@ -35,7 +35,7 @@
 #define RANDOM_SEED 5259140
 #define NUMBER_TO_SERVE 50e6
 
-#define SERVICE_TIME 10
+#define SERVICE_TIME 30
 #define ARRIVAL_RATE 0.1
 
 #define BLIP_RATE 10000
@@ -157,7 +157,7 @@ int main()
   };
 
   /* Print TSV header (tab-delimited for robust Excel import) */
-  printf("arrival_rate\tseed\tutilization\tfraction_served\tmean_number_in_system\tmean_delay\ttotal_served\ttotal_arrived\tclock_time\n");
+  printf("arrival_rate,seed,utilization,fraction_served,mean_number_in_system,mean_delay,total_served,total_arrived,clock_time\n");
   {
     int i, s;
     for (i = 0; i < NRATES; i++) {
@@ -169,7 +169,7 @@ int main()
       sum_mean_delay += r.mean_delay;
 
       /* Per-run TSV row (tab-delimited, CRLF line ending) */
-      printf("%.5f\t%u\t%.10f\t%.10f\t%.10f\t%.10f\t%ld\t%ld\t%.10f\n",
+      printf("%.5f,%u,%.10f,%.10f,%.10f,%.10f,%ld,%ld,%.10f\n",
              rate, seeds[s], r.utilization, r.fraction_served,
              r.mean_number_in_system, r.mean_delay,
              r.total_served, r.total_arrived, r.clock_time);
