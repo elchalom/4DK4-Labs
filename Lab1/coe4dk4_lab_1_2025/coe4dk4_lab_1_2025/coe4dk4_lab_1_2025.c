@@ -43,6 +43,9 @@
 
 #define BLIP_RATE 10000
 
+/* NEW */
+#define MAX_QUEUE_SIZE 50  
+
 /*******************************************************************************/
 
 typedef struct {
@@ -53,6 +56,8 @@ typedef struct {
   long int total_served;
   long int total_arrived;
   double clock_time;
+  double rejection_probability;
+  long int rejected_customers;
 } Results;
 
 /* ===== NEW: helper to draw a service time according to the selected model ===== */
@@ -85,6 +90,8 @@ static Results run_one(double arrival_rate, unsigned seed, int verbose)
   long int total_served = 0;
   long int total_arrived = 0;
 
+  long int rejected_customers = 0;
+
   double total_busy_time = 0;
   double integral_of_n = 0;
   double last_event_time = 0;
@@ -102,13 +109,21 @@ static Results run_one(double arrival_rate, unsigned seed, int verbose)
       integral_of_n += number_in_system * (clock - last_event_time);
       last_event_time = clock;
 
-      number_in_system++;
-      total_arrived++;
+      // Check if queue is full (number_in_system includes customer in service)
+      if (number_in_system >= MAX_QUEUE_SIZE + 1) {
+        // Reject this customer
+        rejected_customers++;
+        total_arrived++;
+        // Do NOT increment number_in_system, do NOT start service
+      } else {
+        number_in_system++;
+        total_arrived++;
 
-      /* If the system was idle, start service immediately. */
-      if (number_in_system == 1) {
-        current_service_time = draw_service_time();               /* NEW */
-        next_departure_time = clock + current_service_time;       /* CHANGED */
+        /* If the system was idle, start service immediately. */
+        if (number_in_system == 1) {
+          current_service_time = draw_service_time();
+          next_departure_time = clock + current_service_time;
+        }
       }
 
     } else {
@@ -147,6 +162,8 @@ static Results run_one(double arrival_rate, unsigned seed, int verbose)
   r.total_served = total_served;
   r.total_arrived = total_arrived;
   r.clock_time = clock;
+  r.rejection_probability = (double) rejected_customers / (double) total_arrived;
+  r.rejected_customers = rejected_customers;
   return r;
 }
 
@@ -154,7 +171,7 @@ int main()
 {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  const double rates[] = {0.01, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.098};
+  const double rates[] = {0.01, 0.03, 0.05, 0.07, 0.08, 0.09, 0.098};
   const int NRATES = (int)(sizeof(rates)/sizeof(rates[0]));
 
   const unsigned seeds[10] = {
@@ -168,8 +185,8 @@ int main()
 #else
   printf("# model=M/D/1\n");
 #endif
-  printf("arrival_rate,seed,utilization,fraction_served,mean_number_in_system,mean_delay,total_served,total_arrived,clock_time\n");
-
+  // printf("arrival_rate,seed,utilization,fraction_served,mean_number_in_system,mean_delay,total_served,total_arrived,clock_time,rejection_probability,rejected_customers\n");
+  printf("arrival_rate\tseed\tutilization\tfraction_served\tmean_number_in_system\tmean_delay\ttotal_served\ttotal_arrived\tclock_time\trejection_probability\trejected_customers\n");
   int i, s;
   for (i = 0; i < NRATES; i++) {
     double rate = rates[i];
@@ -179,17 +196,52 @@ int main()
       Results r = run_one(rate, seeds[s], 0 /* verbose */);
       sum_mean_delay += r.mean_delay;
 
-      printf("%.5f,%u,%.10f,%.10f,%.10f,%.10f,%ld,%ld,%.10f\n",
+      // printf("%.5f,%u,%.10f,%.10f,%.10f,%.10f,%ld,%ld,%.10f\n",
+      printf("%.5f\t%u\t%.10f\t%.10f\t%.10f\t%.10f\t%ld\t%ld\t%.10f\t%.10f\t%ld\n",
              rate, seeds[s], r.utilization, r.fraction_served,
              r.mean_number_in_system, r.mean_delay,
-             r.total_served, r.total_arrived, r.clock_time);
+             r.total_served, r.total_arrived, r.clock_time,
+             r.rejection_probability, r.rejected_customers);
       fflush(stdout);
     }
 
     double avg_mean_delay = sum_mean_delay / 10.0;
-    printf("AVG\t%.5f\t%d_seeds\tavg_mean_delay\t%.10f\r\n", rate, 10, avg_mean_delay);
+    printf("AVG\t%.5f\t%d_seeds\tavg_mean_delay\t%.10f\n", rate, 10, avg_mean_delay);
     fflush(stdout);
     fprintf(stderr, "Completed arrival_rate=%.5f\n", rate);
   }
   return 0;
 }
+
+//   /* Print TSV header (tab-delimited for robust Excel import) */
+//   printf("arrival_rate\tseed\tutilization\tfraction_served\tmean_number_in_system\tmean_delay\ttotal_served\ttotal_arrived\tclock_time\n");
+//   {
+//     int i, s;
+//     for (i = 0; i < NRATES; i++) {
+//     double rate = rates[i];
+//     double sum_mean_delay = 0.0;
+
+//       for (s = 0; s < 10; s++) {
+//       Results r = run_one(rate, seeds[s], 0 /* verbose */);
+//       sum_mean_delay += r.mean_delay;
+
+//       /* Per-run TSV row (tab-delimited, CRLF line ending) */
+//       printf("%.5f\t%u\t%.10f\t%.10f\t%.10f\t%.10f\t%ld\t%ld\t%.10f\n",
+//              rate, seeds[s], r.utilization, r.fraction_served,
+//              r.mean_number_in_system, r.mean_delay,
+//              r.total_served, r.total_arrived, r.clock_time);
+//       fflush(stdout);
+//       }
+
+//   /* Per-rate average summary row (prefixed with AVG for easy filtering). */
+//     double avg_mean_delay = sum_mean_delay / 10.0;
+//   printf("AVG\t%.5f\t%d_seeds\tavg_mean_delay\t%.10f\n", rate, 10, avg_mean_delay);
+//     fflush(stdout);
+
+//     /* Progress message to stderr so it doesn't pollute CSV. */
+//     fprintf(stderr, "Completed arrival_rate=%.5f\n", rate);
+//     }
+//   }
+//   return 0;
+// }
+// */
