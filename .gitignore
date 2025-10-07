@@ -1,0 +1,24 @@
+# Ignore compiled binaries and object files
+*.o
+*.out
+*.exe
+*.a
+*.so
+*.dll
+*.dylib
+run
+
+# Ignore editor and OS files
+*.swp
+*.swo
+*~
+.DS_Store
+__MACOSX/
+
+# Ignore CMake and Make artifacts
+CMakeCache.txt
+cmake_install.cmake
+
+# Ignore logs and temporary files
+*.log
+*.tmp

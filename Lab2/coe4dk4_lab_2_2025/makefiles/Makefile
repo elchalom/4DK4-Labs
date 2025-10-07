@@ -32,7 +32,7 @@ LIBS=m
 
 # Get a list of all the C source files in this directory.
 #
-SOURCES=$(wildcard *.c)
+SOURCES=$(wildcard ../*.c)
 
 # These are the corresponding object files.
 #
@@ -40,7 +40,7 @@ OBJECTS=$(SOURCES:.c=.o)
 
 # Get a list of all the C header files in this directory.
 #
-INCLUDES=$(wildcard *.h)
+INCLUDES=$(wildcard ../*.h)
 
 ################################################################################
 
