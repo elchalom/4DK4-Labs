@@ -38,7 +38,7 @@
 #define RANDOM_SEED 5259140
 #define NUMBER_TO_SERVE 50e6
 
-#define SERVICE_TIME 10
+#define SERVICE_TIME 30
 #define ARRIVAL_RATE 0.1
 
 #define BLIP_RATE 10000
@@ -154,7 +154,7 @@ int main()
 {
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  const double rates[] = {0.01, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.098};
+  const double rates[] = {0.005, 0.01, 0.015, 0.02, 0.025, 0.028, 0.03, 0.032, 0.033};
   const int NRATES = (int)(sizeof(rates)/sizeof(rates[0]));
 
   const unsigned seeds[10] = {
