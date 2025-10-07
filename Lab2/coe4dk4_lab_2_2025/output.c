@@ -95,5 +95,19 @@ output_results(Simulation_Run_Ptr simulation_run)
   printf("\n");
 }
 
+void output_results_csv(FILE *csv, Simulation_Run_Ptr simulation_run) {
+    Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+    double xmtted_fraction = (double) data->number_of_packets_processed / data->arrival_count;
+    double mean_delay = 1e3 * data->accumulated_delay / data->number_of_packets_processed;
+    extern double PACKET_ARRIVAL_RATE;
+    fprintf(csv, "%.3f,%d,%ld,%ld,%.5f,%.2f\n",
+            PACKET_ARRIVAL_RATE,
+            data->random_seed,
+            data->arrival_count,
+            data->number_of_packets_processed,
+            xmtted_fraction,
+            mean_delay);
+}
+
 
 
