@@ -45,6 +45,15 @@ end_packet_transmission_event(Simulation_Run_Ptr, void*);
 double
 get_packet_transmission_time(void);
 
+/* New function prototypes for Part 5 */
+void start_transmission_on_link1(Simulation_Run_Ptr, Packet_Ptr);
+void start_transmission_on_link2(Simulation_Run_Ptr, Packet_Ptr);
+void start_transmission_on_link3(Simulation_Run_Ptr, Packet_Ptr);
+
+void end_link1_transmission_event(Simulation_Run_Ptr, void*);
+void end_link2_transmission_event(Simulation_Run_Ptr, void*);
+void end_link3_transmission_event(Simulation_Run_Ptr, void*);
+
 /******************************************************************************/
 
 #endif /* packet_transmission.h */

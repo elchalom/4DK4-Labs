@@ -35,18 +35,33 @@
 
 extern double PACKET_ARRIVAL_RATE;
 
+extern double P12; // Probability of routing to Switch 2
+
+typedef enum {SWITCH1, SWITCH2, SWITCH3} Switch_ID;
+typedef enum {LINK1, LINK2, LINK3} Link_ID;
+
 /******************************************************************************/
 
 typedef struct _simulation_run_data_ 
 {
-  Fifoqueue_Ptr buffer;
-  Server_Ptr link[2];
+  // Fifoqueue_Ptr buffer;
+  //Buffers for each switch
+  Fifoqueue_Ptr buffer1;
+  Fifoqueue_Ptr buffer2;
+  Fifoqueue_Ptr buffer3;
+
+  // Server_Ptr link[2];
+  // Links
+  Server_Ptr link1;
+  Server_Ptr link2;
+  Server_Ptr link3;
+
   long int blip_counter;
-  long int arrival_count;
-  long int number_of_packets_processed;
-  double accumulated_delay;
+  long int arrival_count[3];
+  long int processed_count[3];
+  double accumulated_delay[3];
   unsigned random_seed;
-  long int delay_exceed_count; // Count packets with delay > 20 ms
+  // long int delay_exceed_count; // Count packets with delay > 20 ms
 } Simulation_Run_Data, * Simulation_Run_Data_Ptr;
 
 typedef enum {XMTTING, WAITING} Packet_Status;
@@ -55,8 +70,8 @@ typedef struct _packet_
 {
   double arrive_time;
   double service_time;
-  int source_id;
-  int destination_id;
+  Switch_ID origin_switch;    /* Which switch it originated from */
+  Link_ID destination_link;   /* Final destination (LINK2 or LINK3) */
   Packet_Status status;
 } Packet, * Packet_Ptr;
 

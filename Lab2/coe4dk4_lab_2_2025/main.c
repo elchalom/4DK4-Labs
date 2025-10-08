@@ -31,6 +31,7 @@
 #include "cleanup_memory.h"
 #include "trace.h"
 #include "main.h"
+#include "network_arrival.h"
 
 /******************************************************************************/
 
@@ -50,6 +51,7 @@
 
 /* Declare PACKET_ARRIVAL_RATE as a global variable */
 double PACKET_ARRIVAL_RATE;
+double P12; // Global probability variable
 
 /* 
  * Main function: sweeps arrival rates, runs simulation for each, and outputs results to CSV.
@@ -60,80 +62,77 @@ int main(void)
     Simulation_Run_Data data;
 
     /* Open CSV file for writing results */
-    FILE *csv = fopen("../data/results.csv", "w");
+    FILE *csv = fopen("data/results.csv", "w");
     if (!csv) {
         perror("Failed to open results.csv");
         return 1;
     }
+    
     /* Write CSV header */
-    fprintf(csv, "arrival_rate,seed,arrivals,transmitted,service_fraction,mean_delay_ms\n");
+    fprintf(csv, "p12,seed,switch1_mean_delay,switch2_mean_delay,switch3_mean_delay\n");
 
-    /* Sweep arrival rates (example: 100 to 1000 in steps of 100) */
-
-    for (double rate = 200; rate <= 1000; rate += STEP) {
-      if (rate == 1000) rate = 950;
-      
-      PACKET_ARRIVAL_RATE = rate;
-
-        /* Declare and initialize our random number generator seeds defined in simparameters.h */
+    /* Sweep P12 from 0.1 to 0.9 in steps of 0.1 */
+    for (double p = 0.1; p <= 0.9; p += 0.1) {
+        P12 = p;
+        
+        /* Run simulation with different random seeds */
         unsigned RANDOM_SEEDS[] = {RANDOM_SEED_LIST, 0};
         unsigned random_seed;
         int j = 0;
 
-        /* Loop for each random number generator seed, doing a separate simulation_run run for each. */
         while ((random_seed = RANDOM_SEEDS[j++]) != 0) {
-
-            /* Create a new simulation run. */
+            /* Create a new simulation run */
             simulation_run = simulation_run_new();
-
-            /* Set the simulation_run data pointer to our data object. */
             simulation_run_attach_data(simulation_run, (void *)&data);
 
-            /* Initialize the simulation_run data variables, declared in main.h. */
+            /* Initialize data structures */
             data.blip_counter = 0;
-            data.arrival_count = 0;
-            data.number_of_packets_processed = 0;
-            data.accumulated_delay = 0.0;
             data.random_seed = random_seed;
-            data.delay_exceed_count = 0; 
-
-            /* Create the packet buffer and transmission link, declared in main.h. */
-            data.buffer = fifoqueue_new();
-            data.link[0] = server_new();
-            data.link[1] = server_new();
-
-            /* Set the random number generator seed for this run. */
-            random_generator_initialize(random_seed);
-
-            /* Schedule the initial packet arrival for the current clock time (= 0). */
-            schedule_packet_arrival_event(simulation_run, simulation_run_get_time(simulation_run));
-
-            /* Execute events until we are finished. */
-            while (data.number_of_packets_processed < RUNLENGTH) {
-                simulation_run_execute_event(simulation_run);
+            
+            for(int i = 0; i < 3; i++) {
+                data.arrival_count[i] = 0;
+                data.processed_count[i] = 0;
+                data.accumulated_delay[i] = 0.0;
             }
 
-            
-            /* Output results to CSV */
-            output_results_csv(csv, simulation_run);
-            
-            
-            // Optionally print probability to terminal
-            // double prob = (double)data.delay_exceed_count / data.arrival_count;
-            // printf("Probability delay > 20ms: %.4f, %f\n", prob, PACKET_ARRIVAL_RATE);
+            /* Create buffers and links */
+            data.buffer1 = fifoqueue_new();
+            data.buffer2 = fifoqueue_new();
+            data.buffer3 = fifoqueue_new();
+            data.link1 = server_new();
+            data.link2 = server_new();
+            data.link3 = server_new();
 
-            // if (prob > 0.02) {
-            //     printf("Maximum lambda before exceeding 2%%: %.2f\n", PACKET_ARRIVAL_RATE - STEP);
-            //     break; // Stop sweeping lambda
-            // }
+            /* Set random seed */
+            random_generator_initialize(random_seed);
 
-            /* Clean up after ourselves. */
-            cleanup_memory(simulation_run);
+            /* Schedule initial arrivals for all switches */
+            schedule_switch1_arrival_event(simulation_run, 0.0);
+            schedule_switch2_arrival_event(simulation_run, 0.0);
+            schedule_switch3_arrival_event(simulation_run, 0.0);
+
+            /* Run simulation until enough packets processed */
+            long total_processed = 0;
+            while (total_processed < RUNLENGTH) {
+                simulation_run_execute_event(simulation_run);
+                total_processed = data.processed_count[0] + data.processed_count[1] + data.processed_count[2];
+            }
+
+            /* Calculate mean delays and output to CSV */
+            double mean_delay[3];
+            for(int i = 0; i < 3; i++) {
+                mean_delay[i] = (data.processed_count[i] > 0) ? 
+                    1000.0 * data.accumulated_delay[i] / data.processed_count[i] : 0.0;
+            }
+            
+            fprintf(csv, "%.1f,%d,%.3f,%.3f,%.3f\n", 
+                P12, random_seed, mean_delay[0], mean_delay[1], mean_delay[2]);
+
+            /* Clean up */
+            cleanup_memory_part5(simulation_run);
         }
     }
 
-    /* Close the CSV file */
     fclose(csv);
-
     return 0;
 }
