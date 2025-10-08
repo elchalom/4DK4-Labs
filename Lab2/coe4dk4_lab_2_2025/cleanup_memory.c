@@ -37,21 +37,21 @@
 void
 cleanup_memory (Simulation_Run_Ptr simulation_run)
 {
-  Simulation_Run_Data_Ptr data;
+  // Simulation_Run_Data_Ptr data;
 
-  data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+  // data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
 
-  /* Clean up buffer */
-  while (fifoqueue_size(data->buffer) > 0)
-    xfree(fifoqueue_get(data->buffer));
-  xfree(data->buffer);
+  // /* Clean up buffer */
+  // while (fifoqueue_size(data->buffer) > 0)
+  //   xfree(fifoqueue_get(data->buffer));
+  // xfree(data->buffer);
 
-  /* Clean up link */
-  if (server_state(data->link) == BUSY)
-    xfree(server_get(data->link));
-  xfree(data->link);
+  // /* Clean up link */
+  // if (server_state(data->link) == BUSY)
+  //   xfree(server_get(data->link));
+  // xfree(data->link);
 
-  simulation_run_free_memory(simulation_run);
+  // simulation_run_free_memory(simulation_run);
 }
 
 /* New cleanup function for Part 5 */
@@ -64,14 +64,39 @@ cleanup_memory_part5 (Simulation_Run_Ptr simulation_run)
 void
 cleanup_memory_part6 (Simulation_Run_Ptr simulation_run)
 {
+  // Simulation_Run_Data_Ptr data;
+
+  // data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+
+  // /* Clean up buffer */
+  // while (fifoqueue_size(data->buffer) > 0)
+  //   xfree(fifoqueue_get(data->buffer));
+  // xfree(data->buffer);
+
+  // /* Clean up link */
+  // if (server_state(data->link) == BUSY)
+  //   xfree(server_get(data->link));
+  // xfree(data->link);
+
+  // simulation_run_free_memory(simulation_run);
+}
+
+void
+cleanup_memory_part7 (Simulation_Run_Ptr simulation_run)
+{
   Simulation_Run_Data_Ptr data;
 
   data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
 
-  /* Clean up buffer */
-  while (fifoqueue_size(data->buffer) > 0)
-    xfree(fifoqueue_get(data->buffer));
-  xfree(data->buffer);
+  /* Clean up voice buffer */
+  while (fifoqueue_size(data->voice_buffer) > 0)
+    xfree(fifoqueue_get(data->voice_buffer));
+  xfree(data->voice_buffer);
+
+  /* Clean up data buffer */
+  while (fifoqueue_size(data->data_buffer) > 0)
+    xfree(fifoqueue_get(data->data_buffer));
+  xfree(data->data_buffer);
 
   /* Clean up link */
   if (server_state(data->link) == BUSY)

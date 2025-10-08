@@ -82,9 +82,12 @@ end_packet_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
   /* Free the packet */
   xfree((void *) this_packet);
 
-  /* Check for waiting packets */
-  if(fifoqueue_size(data->buffer) > 0) {
-    next_packet = (Packet_Ptr) fifoqueue_get(data->buffer);
+  /* Priority scheduling: Check voice queue first, then data queue */
+  if(fifoqueue_size(data->voice_buffer) > 0) {
+    next_packet = (Packet_Ptr) fifoqueue_get(data->voice_buffer);
+    start_transmission_on_link(simulation_run, next_packet, link);
+  } else if(fifoqueue_size(data->data_buffer) > 0) {
+    next_packet = (Packet_Ptr) fifoqueue_get(data->data_buffer);
     start_transmission_on_link(simulation_run, next_packet, link);
   }
 }

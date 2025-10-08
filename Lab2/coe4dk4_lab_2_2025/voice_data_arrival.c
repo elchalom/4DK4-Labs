@@ -38,13 +38,12 @@ void voice_arrival_event(Simulation_Run_Ptr simulation_run, void * ptr)
   new_packet = (Packet_Ptr) xmalloc(sizeof(Packet));
   new_packet->arrive_time = simulation_run_get_time(simulation_run);
   new_packet->service_time = exponential_generator(MEAN_SERVICE_TIME);
-  printf("Generated service time: %.6f seconds\n", new_packet->service_time);
   new_packet->packet_type = VOICE_PACKET;
   new_packet->status = WAITING;
 
-  /* Queue or start transmission */
+  /* Queue in voice buffer or start transmission */
   if(server_state(data->link) == BUSY) {
-    fifoqueue_put(data->buffer, (void*) new_packet);
+    fifoqueue_put(data->voice_buffer, (void*) new_packet);
   } else {
     start_transmission_on_link(simulation_run, new_packet, data->link);
   }
@@ -66,15 +65,19 @@ void data_arrival_event(Simulation_Run_Ptr simulation_run, void * ptr)
   new_packet = (Packet_Ptr) xmalloc(sizeof(Packet));
   new_packet->arrive_time = simulation_run_get_time(simulation_run);
   new_packet->service_time = exponential_generator(MEAN_SERVICE_TIME);
-  printf("Generated service time: %.6f seconds\n", new_packet->service_time);
   new_packet->packet_type = DATA_PACKET;
   new_packet->status = WAITING;
 
-  /* Queue or start transmission */
+  /* Queue in data buffer or start transmission (if no voice packets waiting) */
   if(server_state(data->link) == BUSY) {
-    fifoqueue_put(data->buffer, (void*) new_packet);
+    fifoqueue_put(data->data_buffer, (void*) new_packet);
   } else {
-    start_transmission_on_link(simulation_run, new_packet, data->link);
+    /* Only start if no voice packets are waiting */
+    if(fifoqueue_size(data->voice_buffer) == 0) {
+      start_transmission_on_link(simulation_run, new_packet, data->link);
+    } else {
+      fifoqueue_put(data->data_buffer, (void*) new_packet);
+    }
   }
 
   /* Schedule next data arrival (exponential intervals) */

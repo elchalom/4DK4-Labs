@@ -41,8 +41,9 @@ typedef enum {VOICE_PACKET, DATA_PACKET} Packet_Type;
 
 typedef struct _simulation_run_data_ 
 {
-  Fifoqueue_Ptr buffer;  /* Single FCFS buffer */
-  Server_Ptr link;       /* Single transmission link */
+  Fifoqueue_Ptr voice_buffer;  /* Priority queue for voice packets */
+  Fifoqueue_Ptr data_buffer;   /* Secondary queue for data packets */
+  Server_Ptr link;             /* Single transmission link */
   
   long int blip_counter;
   

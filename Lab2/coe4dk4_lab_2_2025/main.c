@@ -90,8 +90,9 @@ int main(void)
             data.data_processed_count = 0;
             data.data_accumulated_delay = 0.0;
 
-            /* Create buffer and link */
-            data.buffer = fifoqueue_new();
+            /* Create separate buffers for voice and data, plus link */
+            data.voice_buffer = fifoqueue_new();
+            data.data_buffer = fifoqueue_new();
             data.link = server_new();
 
             /* Set random seed */
@@ -118,7 +119,7 @@ int main(void)
                 DATA_ARRIVAL_RATE, random_seed, voice_mean_delay, data_mean_delay);
 
             /* Clean up */
-            cleanup_memory_part6(simulation_run);
+            cleanup_memory_part7(simulation_run);
         }
     }
 
