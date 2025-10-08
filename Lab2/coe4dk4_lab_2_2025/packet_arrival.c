@@ -78,10 +78,11 @@ packet_arrival_event(Simulation_Run_Ptr simulation_run, void * ptr)
    * the buffer.
    */
 
-  if(server_state(data->link) == BUSY) {
+  if(server_state(data->link[0]) == BUSY && server_state(data->link[1]) == BUSY) {
     fifoqueue_put(data->buffer, (void*) new_packet);
   } else {
-    start_transmission_on_link(simulation_run, new_packet, data->link);
+    int idle = (server_state(data->link[0]) == FREE) ? 0 : 1;
+    start_transmission_on_link(simulation_run, new_packet, data->link[idle]);
   }
 
   double packet_delay = simulation_run_get_time(simulation_run) - new_packet->arrive_time;

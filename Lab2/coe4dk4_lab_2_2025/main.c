@@ -69,8 +69,9 @@ int main(void)
     fprintf(csv, "arrival_rate,seed,arrivals,transmitted,service_fraction,mean_delay_ms\n");
 
     /* Sweep arrival rates (example: 100 to 1000 in steps of 100) */
-    for (double rate = 400; rate <= 405; rate += STEP) {
-      if (rate == 2000) rate = 1950;
+
+    for (double rate = 200; rate <= 1000; rate += STEP) {
+      if (rate == 1000) rate = 950;
       
       PACKET_ARRIVAL_RATE = rate;
 
@@ -98,7 +99,8 @@ int main(void)
 
             /* Create the packet buffer and transmission link, declared in main.h. */
             data.buffer = fifoqueue_new();
-            data.link = server_new();
+            data.link[0] = server_new();
+            data.link[1] = server_new();
 
             /* Set the random number generator seed for this run. */
             random_generator_initialize(random_seed);
@@ -111,18 +113,19 @@ int main(void)
                 simulation_run_execute_event(simulation_run);
             }
 
-            double prob = (double)data.delay_exceed_count / data.arrival_count;
-
+            
             /* Output results to CSV */
             output_results_csv(csv, simulation_run);
-                        
+            
+            
             // Optionally print probability to terminal
-            printf("Probability delay > 20ms: %.4f, %f\n", prob, PACKET_ARRIVAL_RATE);
+            // double prob = (double)data.delay_exceed_count / data.arrival_count;
+            // printf("Probability delay > 20ms: %.4f, %f\n", prob, PACKET_ARRIVAL_RATE);
 
-            if (prob > 0.02) {
-                printf("Maximum lambda before exceeding 2%%: %.2f\n", PACKET_ARRIVAL_RATE - STEP);
-                break; // Stop sweeping lambda
-}
+            // if (prob > 0.02) {
+            //     printf("Maximum lambda before exceeding 2%%: %.2f\n", PACKET_ARRIVAL_RATE - STEP);
+            //     break; // Stop sweeping lambda
+            // }
 
             /* Clean up after ourselves. */
             cleanup_memory(simulation_run);
