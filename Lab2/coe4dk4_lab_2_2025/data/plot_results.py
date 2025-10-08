@@ -26,7 +26,7 @@ plt.plot(avg_data['p12'], avg_data['switch3_mean_delay'],
 # Formatting
 plt.xlabel('P₁₂', fontsize=12)
 plt.ylabel('Mean Delay (ms)', fontsize=12)
-plt.title('Mean Packet Delay vs P₁₂ for Three-Switch Network\n(λ₁=400, λ₂=300, λ₃=300 packets/sec)', fontsize=14)
+plt.title('Mean Packet Delay vs P₁₂ for Three-Switch Network\n(λ₁=750, λ₂=500, λ₃=500 packets/sec)', fontsize=14)
 plt.legend(fontsize=11, loc='best')
 plt.grid(True, alpha=0.3)
 plt.xlim(0.05, 0.95)
