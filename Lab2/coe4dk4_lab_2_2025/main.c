@@ -31,7 +31,7 @@
 #include "cleanup_memory.h"
 #include "trace.h"
 #include "main.h"
-#include "network_arrival.h"
+#include "voice_data_arrival.h"
 
 /******************************************************************************/
 
@@ -49,13 +49,8 @@
 
 /******************************************************************************/
 
-/* Declare PACKET_ARRIVAL_RATE as a global variable */
-double PACKET_ARRIVAL_RATE;
-double P12; // Global probability variable
+double DATA_ARRIVAL_RATE; /* Global variable */
 
-/* 
- * Main function: sweeps arrival rates, runs simulation for each, and outputs results to CSV.
- */
 int main(void)
 {
     Simulation_Run_Ptr simulation_run;
@@ -69,11 +64,11 @@ int main(void)
     }
     
     /* Write CSV header */
-    fprintf(csv, "p12,seed,switch1_mean_delay,switch2_mean_delay,switch3_mean_delay\n");
+    fprintf(csv, "data_arrival_rate,seed,voice_mean_delay,data_mean_delay\n");
 
-    /* Sweep P12 from 0.1 to 0.9 in steps of 0.1 */
-    for (double p = 0.1; p <= 0.9; p += 0.1) {
-        P12 = p;
+    /* Sweep data arrival rates from 50 to 500 packets/sec */
+    for (double rate = 1; rate <= 15; rate += 1) {
+        DATA_ARRIVAL_RATE = rate;
         
         /* Run simulation with different random seeds */
         unsigned RANDOM_SEEDS[] = {RANDOM_SEED_LIST, 0};
@@ -88,48 +83,42 @@ int main(void)
             /* Initialize data structures */
             data.blip_counter = 0;
             data.random_seed = random_seed;
-            
-            for(int i = 0; i < 3; i++) {
-                data.arrival_count[i] = 0;
-                data.processed_count[i] = 0;
-                data.accumulated_delay[i] = 0.0;
-            }
+            data.voice_arrival_count = 0;
+            data.voice_processed_count = 0;
+            data.voice_accumulated_delay = 0.0;
+            data.data_arrival_count = 0;
+            data.data_processed_count = 0;
+            data.data_accumulated_delay = 0.0;
 
-            /* Create buffers and links */
-            data.buffer1 = fifoqueue_new();
-            data.buffer2 = fifoqueue_new();
-            data.buffer3 = fifoqueue_new();
-            data.link1 = server_new();
-            data.link2 = server_new();
-            data.link3 = server_new();
+            /* Create buffer and link */
+            data.buffer = fifoqueue_new();
+            data.link = server_new();
 
             /* Set random seed */
             random_generator_initialize(random_seed);
 
-            /* Schedule initial arrivals for all switches */
-            schedule_switch1_arrival_event(simulation_run, 0.0);
-            schedule_switch2_arrival_event(simulation_run, 0.0);
-            schedule_switch3_arrival_event(simulation_run, 0.0);
+            /* Schedule initial arrivals */
+            schedule_voice_arrival_event(simulation_run, 0.0);
+            schedule_data_arrival_event(simulation_run, 0.0);
 
             /* Run simulation until enough packets processed */
             long total_processed = 0;
             while (total_processed < RUNLENGTH) {
                 simulation_run_execute_event(simulation_run);
-                total_processed = data.processed_count[0] + data.processed_count[1] + data.processed_count[2];
+                total_processed = data.voice_processed_count + data.data_processed_count;
             }
 
             /* Calculate mean delays and output to CSV */
-            double mean_delay[3];
-            for(int i = 0; i < 3; i++) {
-                mean_delay[i] = (data.processed_count[i] > 0) ? 
-                    1000.0 * data.accumulated_delay[i] / data.processed_count[i] : 0.0;
-            }
+            double voice_mean_delay = (data.voice_processed_count > 0) ? 
+                1000.0 * data.voice_accumulated_delay / data.voice_processed_count : 0.0;
+            double data_mean_delay = (data.data_processed_count > 0) ? 
+                1000.0 * data.data_accumulated_delay / data.data_processed_count : 0.0;
             
-            fprintf(csv, "%.1f,%d,%.3f,%.3f,%.3f\n", 
-                P12, random_seed, mean_delay[0], mean_delay[1], mean_delay[2]);
+            fprintf(csv, "%.1f,%d,%.3f,%.3f\n", 
+                DATA_ARRIVAL_RATE, random_seed, voice_mean_delay, data_mean_delay);
 
             /* Clean up */
-            cleanup_memory_part5(simulation_run);
+            cleanup_memory_part6(simulation_run);
         }
     }
 

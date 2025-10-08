@@ -36,6 +36,8 @@ void
 cleanup_memory(Simulation_Run_Ptr);
 void
 cleanup_memory_part5(Simulation_Run_Ptr);
+void
+cleanup_memory_part6(Simulation_Run_Ptr);
 
 /******************************************************************************/
 

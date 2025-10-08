@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include "trace.h"
 #include "main.h"
-#include "output.h"
 #include "packet_transmission.h"
 
 /******************************************************************************/
@@ -39,8 +38,8 @@
 
 long
 schedule_end_packet_transmission_event(Simulation_Run_Ptr simulation_run,
-				       double event_time,
-				       Server_Ptr link)
+                       double event_time,
+                       Server_Ptr link)
 {
   Event event;
 
@@ -63,44 +62,31 @@ schedule_end_packet_transmission_event(Simulation_Run_Ptr simulation_run,
 void
 end_packet_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
 {
-  // Simulation_Run_Data_Ptr data;
-  // Packet_Ptr this_packet, next_packet;
+  Simulation_Run_Data_Ptr data;
+  Packet_Ptr this_packet, next_packet;
 
-  // TRACE(printf("End Of Packet.\n"););
+  data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+  this_packet = (Packet_Ptr) server_get(link);
 
-  // data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+  /* Collect statistics based on packet type */
+  double delay = simulation_run_get_time(simulation_run) - this_packet->arrive_time;
+  
+  if (this_packet->packet_type == VOICE_PACKET) {
+    data->voice_processed_count++;
+    data->voice_accumulated_delay += delay;
+  } else {
+    data->data_processed_count++;
+    data->data_accumulated_delay += delay;
+  }
 
-  // /* 
-  //  * Packet transmission is finished. Take the packet off the data link.
-  //  */
+  /* Free the packet */
+  xfree((void *) this_packet);
 
-  // this_packet = (Packet_Ptr) server_get(link);
-
-  // /* Collect statistics. */
-  // data->number_of_packets_processed++;
-  // data->accumulated_delay += simulation_run_get_time(simulation_run) - 
-  //   this_packet->arrive_time;
-
-  // double packet_delay = simulation_run_get_time(simulation_run) - this_packet->arrive_time;
-  // if (packet_delay > 0.02) { // 20 ms = 0.02 seconds
-  //     data->delay_exceed_count++;
-  // }
-
-  // /* Output activity blip every so often. */
-  // output_progress_msg_to_screen(simulation_run);
-
-  // /* This packet is done ... give the memory back. */
-  // xfree((void *) this_packet);
-
-  // /* 
-  //  * See if there is are packets waiting in the buffer. If so, take the next one
-  //  * out and transmit it immediately.
-  // */
-
-  // if(fifoqueue_size(data->buffer) > 0) {
-  //   next_packet = (Packet_Ptr) fifoqueue_get(data->buffer);
-  //   start_transmission_on_link(simulation_run, next_packet, link);
-  // }
+  /* Check for waiting packets */
+  if(fifoqueue_size(data->buffer) > 0) {
+    next_packet = (Packet_Ptr) fifoqueue_get(data->buffer);
+    start_transmission_on_link(simulation_run, next_packet, link);
+  }
 }
 
 /*
@@ -111,8 +97,8 @@ end_packet_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
 
 void
 start_transmission_on_link(Simulation_Run_Ptr simulation_run, 
-			   Packet_Ptr this_packet,
-			   Server_Ptr link)
+               Packet_Ptr this_packet,
+               Server_Ptr link)
 {
   TRACE(printf("Start Of Packet.\n");)
 
@@ -121,8 +107,8 @@ start_transmission_on_link(Simulation_Run_Ptr simulation_run,
 
   /* Schedule the end of packet transmission event. */
   schedule_end_packet_transmission_event(simulation_run,
-	 simulation_run_get_time(simulation_run) + this_packet->service_time,
-	 (void *) link);
+     simulation_run_get_time(simulation_run) + this_packet->service_time,
+     (void *) link);
 }
 
 /*
@@ -133,124 +119,5 @@ start_transmission_on_link(Simulation_Run_Ptr simulation_run,
 double
 get_packet_transmission_time(void)
 {
-  return ((double) LINK1_XMT_TIME);
-}
-
-
-/* Link-specific transmission functions */
-void start_transmission_on_link1(Simulation_Run_Ptr simulation_run, Packet_Ptr packet)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  server_put(data->link1, (void*) packet);
-  packet->status = XMTTING;
-  
-  /* Schedule end of Link 1 transmission */
-  Event event;
-  event.description = "Link 1 Xmt End";
-  event.function = end_link1_transmission_event;
-  event.attachment = (void *) data->link1;
-  simulation_run_schedule_event(simulation_run, event, 
-    simulation_run_get_time(simulation_run) + packet->service_time);
-}
-
-void start_transmission_on_link2(Simulation_Run_Ptr simulation_run, Packet_Ptr packet)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  server_put(data->link2, (void*) packet);
-  packet->status = XMTTING;
-  
-  /* Schedule end of Link 2 transmission */
-  Event event;
-  event.description = "Link 2 Xmt End";
-  event.function = end_link2_transmission_event;
-  event.attachment = (void *) data->link2;
-  simulation_run_schedule_event(simulation_run, event, 
-    simulation_run_get_time(simulation_run) + packet->service_time);
-}
-
-void start_transmission_on_link3(Simulation_Run_Ptr simulation_run, Packet_Ptr packet)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  server_put(data->link3, (void*) packet);
-  packet->status = XMTTING;
-  
-  /* Schedule end of Link 3 transmission */
-  Event event;
-  event.description = "Link 3 Xmt End";
-  event.function = end_link3_transmission_event;
-  event.attachment = (void *) data->link3;
-  simulation_run_schedule_event(simulation_run, event, 
-    simulation_run_get_time(simulation_run) + packet->service_time);
-}
-
-/* End transmission events for each link */
-void end_link1_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  Packet_Ptr completed_packet = (Packet_Ptr) server_get(link);
-  
-  /* Route packet to Switch 2 or 3 based on destination */
-  if (completed_packet->destination_link == LINK2) {
-    /* Send to Switch 2 */
-    completed_packet->service_time = LINK2_XMT_TIME;
-    if(server_state(data->link2) == BUSY) {
-      fifoqueue_put(data->buffer2, (void*) completed_packet);
-    } else {
-      start_transmission_on_link2(simulation_run, completed_packet);
-    }
-  } else {
-    /* Send to Switch 3 */
-    completed_packet->service_time = LINK3_XMT_TIME;
-    if(server_state(data->link3) == BUSY) {
-      fifoqueue_put(data->buffer3, (void*) completed_packet);
-    } else {
-      start_transmission_on_link3(simulation_run, completed_packet);
-    }
-  }
-  
-  /* Check if more packets waiting at Switch 1 */
-  if(fifoqueue_size(data->buffer1) > 0) {
-    Packet_Ptr next_packet = (Packet_Ptr) fifoqueue_get(data->buffer1);
-    start_transmission_on_link1(simulation_run, next_packet);
-  }
-}
-
-void end_link2_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  Packet_Ptr completed_packet = (Packet_Ptr) server_get(link);
-  
-  /* Calculate end-to-end delay and collect statistics */
-  double delay = simulation_run_get_time(simulation_run) - completed_packet->arrive_time;
-  int origin = (int)completed_packet->origin_switch;
-  data->accumulated_delay[origin] += delay;
-  data->processed_count[origin]++;
-  
-  xfree(completed_packet);
-  
-  /* Check if more packets waiting at Switch 2 */
-  if(fifoqueue_size(data->buffer2) > 0) {
-    Packet_Ptr next_packet = (Packet_Ptr) fifoqueue_get(data->buffer2);
-    start_transmission_on_link2(simulation_run, next_packet);
-  }
-}
-
-void end_link3_transmission_event(Simulation_Run_Ptr simulation_run, void * link)
-{
-  Simulation_Run_Data_Ptr data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
-  Packet_Ptr completed_packet = (Packet_Ptr) server_get(link);
-  
-  /* Calculate end-to-end delay and collect statistics */
-  double delay = simulation_run_get_time(simulation_run) - completed_packet->arrive_time;
-  int origin = (int)completed_packet->origin_switch;
-  data->accumulated_delay[origin] += delay;
-  data->processed_count[origin]++;
-  
-  xfree(completed_packet);
-  
-  /* Check if more packets waiting at Switch 3 */
-  if(fifoqueue_size(data->buffer3) > 0) {
-    Packet_Ptr next_packet = (Packet_Ptr) fifoqueue_get(data->buffer3);
-    start_transmission_on_link3(simulation_run, next_packet);
-  }
+  return ((double) VOICE_XMT_TIME); /* Default return value */
 }

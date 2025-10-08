@@ -41,31 +41,15 @@ cleanup_memory (Simulation_Run_Ptr simulation_run)
 
   data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
 
-  /* Clean up all three buffers */
-  while (fifoqueue_size(data->buffer1) > 0)
-    xfree(fifoqueue_get(data->buffer1));
-  xfree(data->buffer1);
+  /* Clean up buffer */
+  while (fifoqueue_size(data->buffer) > 0)
+    xfree(fifoqueue_get(data->buffer));
+  xfree(data->buffer);
 
-  while (fifoqueue_size(data->buffer2) > 0)
-    xfree(fifoqueue_get(data->buffer2));
-  xfree(data->buffer2);
-
-  while (fifoqueue_size(data->buffer3) > 0)
-    xfree(fifoqueue_get(data->buffer3));
-  xfree(data->buffer3);
-
-  /* Clean up all three links */
-  if (server_state(data->link1) == BUSY)
-    xfree(server_get(data->link1));
-  xfree(data->link1);
-
-  if (server_state(data->link2) == BUSY)
-    xfree(server_get(data->link2));
-  xfree(data->link2);
-
-  if (server_state(data->link3) == BUSY)
-    xfree(server_get(data->link3));
-  xfree(data->link3);
+  /* Clean up link */
+  if (server_state(data->link) == BUSY)
+    xfree(server_get(data->link));
+  xfree(data->link);
 
   simulation_run_free_memory(simulation_run);
 }
@@ -75,6 +59,26 @@ void
 cleanup_memory_part5 (Simulation_Run_Ptr simulation_run)
 {
   cleanup_memory(simulation_run); /* Use the same cleanup */
+}
+
+void
+cleanup_memory_part6 (Simulation_Run_Ptr simulation_run)
+{
+  Simulation_Run_Data_Ptr data;
+
+  data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
+
+  /* Clean up buffer */
+  while (fifoqueue_size(data->buffer) > 0)
+    xfree(fifoqueue_get(data->buffer));
+  xfree(data->buffer);
+
+  /* Clean up link */
+  if (server_state(data->link) == BUSY)
+    xfree(server_get(data->link));
+  xfree(data->link);
+
+  simulation_run_free_memory(simulation_run);
 }
 
 

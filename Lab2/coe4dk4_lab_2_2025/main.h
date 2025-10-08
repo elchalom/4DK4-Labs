@@ -33,35 +33,30 @@
 
 /******************************************************************************/
 
-extern double PACKET_ARRIVAL_RATE;
+extern double DATA_ARRIVAL_RATE;
 
-extern double P12; // Probability of routing to Switch 2
-
-typedef enum {SWITCH1, SWITCH2, SWITCH3} Switch_ID;
-typedef enum {LINK1, LINK2, LINK3} Link_ID;
+typedef enum {VOICE_PACKET, DATA_PACKET} Packet_Type;
 
 /******************************************************************************/
 
 typedef struct _simulation_run_data_ 
 {
-  // Fifoqueue_Ptr buffer;
-  //Buffers for each switch
-  Fifoqueue_Ptr buffer1;
-  Fifoqueue_Ptr buffer2;
-  Fifoqueue_Ptr buffer3;
-
-  // Server_Ptr link[2];
-  // Links
-  Server_Ptr link1;
-  Server_Ptr link2;
-  Server_Ptr link3;
-
+  Fifoqueue_Ptr buffer;  /* Single FCFS buffer */
+  Server_Ptr link;       /* Single transmission link */
+  
   long int blip_counter;
-  long int arrival_count[3];
-  long int processed_count[3];
-  double accumulated_delay[3];
+  
+  /* Voice traffic statistics */
+  long int voice_arrival_count;
+  long int voice_processed_count;
+  double voice_accumulated_delay;
+  
+  /* Data traffic statistics */
+  long int data_arrival_count;
+  long int data_processed_count;
+  double data_accumulated_delay;
+  
   unsigned random_seed;
-  // long int delay_exceed_count; // Count packets with delay > 20 ms
 } Simulation_Run_Data, * Simulation_Run_Data_Ptr;
 
 typedef enum {XMTTING, WAITING} Packet_Status;
@@ -70,8 +65,7 @@ typedef struct _packet_
 {
   double arrive_time;
   double service_time;
-  Switch_ID origin_switch;    /* Which switch it originated from */
-  Link_ID destination_link;   /* Final destination (LINK2 or LINK3) */
+  Packet_Type packet_type;  /* VOICE_PACKET or DATA_PACKET */
   Packet_Status status;
 } Packet, * Packet_Ptr;
 
@@ -79,8 +73,7 @@ typedef struct _packet_
  * Function prototypes
  */
 
-int
-main(void);
+int main(void);
 
 /******************************************************************************/
 

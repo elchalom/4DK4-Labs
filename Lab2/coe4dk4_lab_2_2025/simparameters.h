@@ -28,28 +28,25 @@
 
 /******************************************************************************/
 
-// #define PACKET_ARRIVAL_RATE 400 /* packets per second */
-#define PACKET_LENGTH 1000 /* bits */
-#define LINK_BIT_RATE 5e5 /* bits per second */
-#define LINK1_BIT_RATE 2e6 /* 2 Mbps */
-#define LINK2_BIT_RATE 1e6 /* 1 Mbps */
-#define LINK3_BIT_RATE 1e6 /* 1 Mbps */
-#define RUNLENGTH 1e6 /* packets - reduced for faster simulation*/
+/* Link and packet parameters */
+#define LINK_BIT_RATE 1e6 /* 1 Mbps */
+#define VOICE_PACKET_SIZE 1776 /* bits (160 bytes payload + 62 bytes header) */
+#define DATA_PACKET_SIZE 1000 /* bits - can be adjusted */
 
-/* Network arrival rates */
-#define LAMBDA1 400 /* packets/sec */
-#define LAMBDA2 300 /* packets/sec */
-#define LAMBDA3 300 /* packets/sec */
+/* Voice traffic parameters */
+#define VOICE_ARRIVAL_INTERVAL 0.1 /* 20 ms = 0.02 seconds */
+#define MEAN_SERVICE_TIME 0.04 /* 40 ms = 0.04 seconds */
 
-#define STEP 200 /* packets per second */
+/* Simulation parameters */
+#define RUNLENGTH 10000 /* packets - reduced for faster simulation */
+#define STEP 50 /* data arrival rate step */
 
 /* Comma separated list of random seeds to run. */
 #define RANDOM_SEED_LIST 400474322, 400430923, 12345678, 987654321, 45671234
 
-#define PACKET_XMT_TIME ((double) PACKET_LENGTH/LINK_BIT_RATE)
-#define LINK1_XMT_TIME ((double) PACKET_LENGTH/LINK1_BIT_RATE)
-#define LINK2_XMT_TIME ((double) PACKET_LENGTH/LINK2_BIT_RATE)
-#define LINK3_XMT_TIME ((double) PACKET_LENGTH/LINK3_BIT_RATE)
+/* Transmission times */
+#define VOICE_XMT_TIME ((double) VOICE_PACKET_SIZE/LINK_BIT_RATE)
+#define DATA_XMT_TIME ((double) DATA_PACKET_SIZE/LINK_BIT_RATE)
 #define BLIPRATE (RUNLENGTH/1000)
 
 /******************************************************************************/
