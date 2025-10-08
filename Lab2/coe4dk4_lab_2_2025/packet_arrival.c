@@ -1,4 +1,3 @@
-
 /*
  * 
  * Simulation_Run of A Single Server Queueing System
@@ -83,6 +82,11 @@ packet_arrival_event(Simulation_Run_Ptr simulation_run, void * ptr)
     fifoqueue_put(data->buffer, (void*) new_packet);
   } else {
     start_transmission_on_link(simulation_run, new_packet, data->link);
+  }
+
+  double packet_delay = simulation_run_get_time(simulation_run) - new_packet->arrive_time;
+  if (packet_delay > 0.02) { // 20 ms = 0.02 seconds
+      data->delay_exceed_count++;
   }
 
   /* 
