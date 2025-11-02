@@ -1,22 +1,17 @@
-
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Files
 erlang_file = 'erlangb_results.csv'
 sim_file = 'simulation_sweep_results.csv'
 
-# Read files
 erlang_df = pd.read_csv(erlang_file, index_col='N_channels')
 # sim CSV columns: A,N,seed,blocked,arrivals,PB
 sim_df = pd.read_csv(sim_file)
 
-# Pivot sim_df to get PB for each (N, A)
 sim_pivot = sim_df.pivot_table(index='N', columns='A', values='PB')
 
-# Choose A values to plot (use the same as erlang_df columns)
+# A values
 A_cols = erlang_df.columns.tolist()
 A_values = [int(col.split('=')[1]) for col in A_cols]
 
