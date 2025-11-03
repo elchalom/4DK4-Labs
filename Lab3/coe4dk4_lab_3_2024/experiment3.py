@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 
 
 def erlang_b(A, N):
@@ -36,7 +37,7 @@ def find_max_load_for_target_pb(N, target_pb=0.015, tol=1e-6):
         else:
             A_high = A_mid  # must decrease load
     
-    return A_low
+    return math.floor(A_low)
 
 
 def main():
