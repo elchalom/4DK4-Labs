@@ -73,6 +73,9 @@ int main(void)
     data.number_of_calls_processed = 0;
     data.accumulated_call_time = 0.0;
     data.random_seed = random_seed;
+    data.buffer = fifoqueue_new();
+    data.waited_call_count = 0;
+    data.accumulated_waiting_time = 0.0;
 
     /* Create the channels. */
     data.channels = (Channel_Ptr *) xcalloc((int) NUMBER_OF_CHANNELS,

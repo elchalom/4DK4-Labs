@@ -79,7 +79,22 @@ void output_results(Simulation_Run_Ptr this_simulation_run)
   printf("Blocking probability = %.5f (Service fraction = %.5f)\n",
 	 1-xmtted_fraction, xmtted_fraction);
 
-  printf("\n");
+  double avg_waiting_time = 0.0;
+  double prob_wait = 0.0;
+  
+  if (sim_data->call_arrival_count > 0) {
+    prob_wait = (double) sim_data->waited_call_count / sim_data->call_arrival_count;
+  }
+  
+  if (sim_data->waited_call_count > 0) {
+    avg_waiting_time = sim_data->accumulated_waiting_time / sim_data->waited_call_count;
+  }
+  
+  printf("Waited call count = %ld \n", sim_data->waited_call_count);
+  printf("Probability of waiting (Pw) = %.4f\n", prob_wait);
+  printf("Average waiting time (Tw) = %.4f minutes\n", avg_waiting_time);
+  
+   printf("\n");
 }
 
 

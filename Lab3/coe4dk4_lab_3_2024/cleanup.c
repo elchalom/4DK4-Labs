@@ -39,6 +39,12 @@ void cleanup (Simulation_Run_Ptr this_simulation_run)
 
   sim_data = (Simulation_Run_Data_Ptr) simulation_run_data(this_simulation_run);
 
+  /* Clean out the buffer (queue) */
+  while (fifoqueue_size(sim_data->buffer) > 0) {
+    xfree(fifoqueue_get(sim_data->buffer));
+  }
+  xfree(sim_data->buffer);
+
   /* Clean out the channels. */
   for (i=0; i<NUMBER_OF_CHANNELS; i++) {
     if( (*(sim_data->channels+i))->state == BUSY)
