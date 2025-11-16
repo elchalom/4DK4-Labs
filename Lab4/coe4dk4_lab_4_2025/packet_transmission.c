@@ -164,12 +164,19 @@ transmission_end_event(Simulation_Run_Ptr simulation_run, void * packet)
       set_channel_state(channel, IDLE);
     }
 
-    //New backoff calculation with exponential backoff
-    backoff_duration = uniform_generator() * pow(2.0, this_packet->collision_count);
-
-    schedule_transmission_start_event(simulation_run,
-				      now + backoff_duration,
-				      (void *) this_packet);
+    // Station 0 persists (no backoff), others use binary exponential backoff
+    if(this_packet->station_id == 0) {
+      // Station 0: immediate retransmission (no backoff)
+      schedule_transmission_start_event(simulation_run,
+                                        now,
+                                        (void *) this_packet);
+    } else {
+      // Other stations: binary exponential backoff
+      backoff_duration = uniform_generator() * pow(2.0, this_packet->collision_count);
+      schedule_transmission_start_event(simulation_run,
+                                        now + backoff_duration,
+                                        (void *) this_packet);
+      }
   }
 
 }
