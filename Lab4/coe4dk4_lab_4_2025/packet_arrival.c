@@ -52,7 +52,7 @@ packet_arrival_event(Simulation_Run_Ptr simulation_run, void* dummy_ptr)
   Station_Ptr station;
   Packet_Ptr new_packet;
   Buffer_Ptr stn_buffer;
-  Time now;
+  Time now, next_slot;
   Simulation_Run_Data_Ptr data;
 
   now = simulation_run_get_time(simulation_run);
@@ -80,13 +80,15 @@ packet_arrival_event(Simulation_Run_Ptr simulation_run, void* dummy_ptr)
   /* If this is the only packet at the station, transmit it (i.e., the
      ALOHA protocol). It stays in the queue either way. */
   if(fifoqueue_size(stn_buffer) == 1) {
-    /* Transmit the packet. */
-    schedule_transmission_start_event(simulation_run, now, (void *) new_packet);
+    /* Calculate next slot boundary + EPSILON for slotted ALOHA */
+    next_slot = SLOT_DURATION * ceil(now / SLOT_DURATION) + EPSILON;
+    /* Transmit the packet at the next slot boundary. */
+    schedule_transmission_start_event(simulation_run, next_slot, (void *) new_packet);
   }
 
   /* Schedule the next packet arrival. */
   schedule_packet_arrival_event(simulation_run, 
-		now + exponential_generator((double) 1/PACKET_ARRIVAL_RATE));
+        now + exponential_generator((double) 1/PACKET_ARRIVAL_RATE));
 }
 
 

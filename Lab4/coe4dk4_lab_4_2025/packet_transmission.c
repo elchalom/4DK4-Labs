@@ -72,9 +72,9 @@ transmission_start_event(Simulation_Run_Ptr simulation_run, void * ptr)
 
   /* Schedule the end of packet transmission event. */
   schedule_transmission_end_event(simulation_run,
-				  simulation_run_get_time(simulation_run) + 
-				  this_packet->service_time,
-				  (void *) this_packet);
+                  SLOT_DURATION * ceil((simulation_run_get_time(simulation_run) + 
+                  this_packet->service_time) / SLOT_DURATION) - EPSILON,
+                  (void *) this_packet);
 }
 
 /*******************************************************************************/
@@ -100,85 +100,69 @@ transmission_end_event(Simulation_Run_Ptr simulation_run, void * packet)
 {
   Packet_Ptr this_packet, next_packet;
   Buffer_Ptr buffer;
-  Time backoff_duration, now;
+  Time backoff_duration, now, next_slot;
   Simulation_Run_Data_Ptr data;
   Channel_Ptr channel;
 
+  this_packet = (Packet_Ptr) packet;
   data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
   channel = data->channel;
 
   now = simulation_run_get_time(simulation_run);
 
-  this_packet = (Packet_Ptr) packet;
-  buffer = (data->stations+this_packet->station_id)->buffer;
-
   /* This station has stopped transmitting. */
   decrement_transmitting_stn_count(channel);
 
-  /* Check if the packet was successful. */
-  if(get_channel_state(channel) == SUCCESS) {
+  /* Check if the packet was successful or collided. */
+  if(get_channel_state(channel) == COLLISION) {
+    /* The packet collided. */
+    this_packet->collision_count++;
+    this_packet->status = WAITING;
+    data->number_of_collisions++;
 
-    /* Transmission was a success. The channel is now IDLE. */
-    set_channel_state(channel, IDLE);
+    /* Binary exponential backoff for slotted ALOHA (multiples of slot duration) */
+    backoff_duration = SLOT_DURATION * ceil(uniform_generator() * pow(2.0, this_packet->collision_count));
     
-    TRACE(printf("Success.\n"););
+    /* Calculate next slot boundary + EPSILON */
+    next_slot = SLOT_DURATION * ceil((now + backoff_duration) / SLOT_DURATION) + EPSILON;
+    
+    schedule_transmission_start_event(simulation_run, next_slot, (void *) this_packet);
+  } else {
+    /* The packet was successfully transmitted. */
+    Station_Ptr station;
+    station = data->stations + this_packet->station_id;
+    station->packet_count++;
+    station->accumulated_delay += now - this_packet->arrive_time;
 
-    /* Collect statistics. */
     data->number_of_packets_processed++;
-
-    (data->stations+this_packet->station_id)->packet_count++;
-    (data->stations+this_packet->station_id)->accumulated_delay +=
-      now - this_packet->arrive_time;
-
-    data->number_of_collisions += this_packet->collision_count;
     data->accumulated_delay += now - this_packet->arrive_time;
 
     output_blip_to_screen(simulation_run);
 
-    /* This packet is done. */
-    free((void*) fifoqueue_get(buffer));
+    /* Remove the packet from the buffer. */
+    buffer = (data->stations + this_packet->station_id)->buffer;
+    fifoqueue_get(buffer);
 
-    /* See if there is another packet at this station. If so, enable
-       it for transmission. We will transmit immediately. */
+    /* See if there is another packet at this station ready to transmit. */
     if(fifoqueue_size(buffer) > 0) {
-      next_packet = fifoqueue_see_front(buffer);
-
-      schedule_transmission_start_event(simulation_run,
-					now,
-					(void*) next_packet);
+      next_packet = (Packet_Ptr) fifoqueue_see_front(buffer);
+      
+      /* Calculate next slot boundary + EPSILON */
+      next_slot = SLOT_DURATION * ceil(now / SLOT_DURATION) + EPSILON;
+      
+      schedule_transmission_start_event(simulation_run, next_slot, (void *) next_packet);
     }
 
-  } else {
-
-    /* The transmission was unsuccessful. Clean up the channel state,
-       backoff, and try again. */
-
-    this_packet->collision_count++;
-    this_packet->status = WAITING;
-
-    TRACE(printf("Collision. Collision count = %i\n",
-		 this_packet->collision_count););
-
-    /* If the collision is over, free up the channel. */
-    if(get_transmitting_stn_count(channel) == 0) {
-      set_channel_state(channel, IDLE);
-    }
-
-    // Station 0 persists (no backoff), others use binary exponential backoff
-    if(this_packet->station_id == 0) {
-      // Station 0: immediate retransmission (no backoff)
-      schedule_transmission_start_event(simulation_run,
-                                        now,
-                                        (void *) this_packet);
-    } else {
-      // Other stations: binary exponential backoff
-      backoff_duration = uniform_generator() * pow(2.0, this_packet->collision_count);
-      schedule_transmission_start_event(simulation_run,
-                                        now + backoff_duration,
-                                        (void *) this_packet);
-      }
+    /* Free the packet's memory. */
+    xfree(this_packet);
   }
 
+  /* Clean up the channel state. */
+  if(get_transmitting_stn_count(channel) > 0) {
+    set_channel_state(channel, COLLISION);
+  } else {
+    set_channel_state(channel, IDLE);
+  }
 }
 
 

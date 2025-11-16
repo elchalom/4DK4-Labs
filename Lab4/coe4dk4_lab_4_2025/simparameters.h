@@ -29,8 +29,10 @@
 
 #define NUMBER_OF_STATIONS 5
 #define MEAN_PACKET_DURATION 1      /* normalized packet Tx time */
-#define PACKET_ARRIVAL_RATE 0.18     /* packets per Tx time */
+#define PACKET_ARRIVAL_RATE 0.25     /* packets per Tx time */
 #define MEAN_BACKOFF_DURATION 10    /* in units of packet transmit time, Tx */
+#define SLOT_DURATION 1.02          /* slot duration in Tx time units */
+#define EPSILON 0.01                /* guard time in Tx time units */
 #define RUNLENGTH 5000000
 #define BLIPRATE 50000
 
