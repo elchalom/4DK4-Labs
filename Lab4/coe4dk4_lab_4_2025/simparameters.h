@@ -27,15 +27,15 @@
 
 /*******************************************************************************/
 
-#define NUMBER_OF_STATIONS 10
+#define NUMBER_OF_STATIONS 5
 #define MEAN_PACKET_DURATION 1      /* normalized packet Tx time */
-#define PACKET_ARRIVAL_RATE 0.1     /* packets per Tx time */
+#define PACKET_ARRIVAL_RATE 0.18     /* packets per Tx time */
 #define MEAN_BACKOFF_DURATION 10    /* in units of packet transmit time, Tx */
-#define RUNLENGTH 70000000
-#define BLIPRATE 100000
+#define RUNLENGTH 5000000
+#define BLIPRATE 50000
 
 /* Comma separated list of random seeds to run. */
-#define RANDOM_SEED_LIST 333333, 222222, 44444
+#define RANDOM_SEED_LIST 400474322, 400430923, 12345678, 987654321, 45671234
 
 /*******************************************************************************/
 
