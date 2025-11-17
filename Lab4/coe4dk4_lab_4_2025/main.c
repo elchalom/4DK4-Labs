@@ -82,11 +82,13 @@ main(void)
 
     /* Create and initialize the channel. */
     data.channel = channel_new();
+    data.data_channel = channel_new();
+    data.data_channel_queue = fifoqueue_new();
 
     /* Schedule initial packet arrival. */
     schedule_packet_arrival_event(simulation_run, 
 		    simulation_run_get_time(simulation_run) +
-		    exponential_generator((double) 1/PACKET_ARRIVAL_RATE));
+		    exponential_generator((double) 1.0/PACKET_ARRIVAL_RATE));
 
     /* Execute events until we are finished. */
     while(data.number_of_packets_processed < RUNLENGTH) {

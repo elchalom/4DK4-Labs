@@ -28,6 +28,7 @@
 #include "output.h"
 #include "channel.h"
 #include "packet_transmission.h"
+#include "data_transmission.h"
 
 /*******************************************************************************/
 
@@ -70,11 +71,10 @@ transmission_start_event(Simulation_Run_Ptr simulation_run, void * ptr)
     set_channel_state(channel, SUCCESS);
   }
 
-  /* Schedule the end of packet transmission event. */
+  /* Schedule the end of packet transmission event - reservation mini-slot ends at slot boundary */
   schedule_transmission_end_event(simulation_run,
-                  SLOT_DURATION * ceil((simulation_run_get_time(simulation_run) + 
-                  this_packet->service_time) / SLOT_DURATION) - EPSILON,
-                  (void *) this_packet);
+              SLOT_DURATION_XR * (floor(simulation_run_get_time(simulation_run) / SLOT_DURATION_XR) + 1.0),
+              (void *) this_packet);
 }
 
 /*******************************************************************************/
@@ -99,7 +99,7 @@ void
 transmission_end_event(Simulation_Run_Ptr simulation_run, void * packet)
 {
   Packet_Ptr this_packet, next_packet;
-  Buffer_Ptr buffer;
+  Buffer_Ptr buffer, data_buffer;
   Time backoff_duration, now, next_slot;
   Simulation_Run_Data_Ptr data;
   Channel_Ptr channel;
@@ -107,54 +107,57 @@ transmission_end_event(Simulation_Run_Ptr simulation_run, void * packet)
   this_packet = (Packet_Ptr) packet;
   data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
   channel = data->channel;
+  data_buffer = data->data_channel_queue;
 
   now = simulation_run_get_time(simulation_run);
 
-  /* This station has stopped transmitting. */
+  /* This station has stopped transmitting on reservation channel. */
   decrement_transmitting_stn_count(channel);
 
-  /* Check if the packet was successful or collided. */
+  /* Check if the reservation was successful or collided. */
   if(get_channel_state(channel) == COLLISION) {
-    /* The packet collided. */
+    /* The reservation collided. */
     this_packet->collision_count++;
     this_packet->status = WAITING;
     data->number_of_collisions++;
 
     /* Binary exponential backoff for slotted ALOHA (multiples of slot duration) */
-    backoff_duration = SLOT_DURATION * ceil(uniform_generator() * pow(2.0, this_packet->collision_count));
+    backoff_duration = SLOT_DURATION_XR * floor(uniform_generator() * pow(2.0, this_packet->collision_count));
     
-    /* Calculate next slot boundary + EPSILON */
-    next_slot = SLOT_DURATION * ceil((now + backoff_duration) / SLOT_DURATION) + EPSILON;
+    /* Calculate next slot boundary after backoff */
+    next_slot = SLOT_DURATION_XR * (floor((now + backoff_duration) / SLOT_DURATION_XR) + 1.0);
     
     schedule_transmission_start_event(simulation_run, next_slot, (void *) this_packet);
   } else {
-    /* The packet was successfully transmitted. */
+    // The reservation was successful - place packet in FCFS data channel queue
     Station_Ptr station;
     station = data->stations + this_packet->station_id;
-    station->packet_count++;
-    station->accumulated_delay += now - this_packet->arrive_time;
 
-    data->number_of_packets_processed++;
-    data->accumulated_delay += now - this_packet->arrive_time;
+    TRACE(printf("Reservation successful. Queueing for data transmission.\n"););
 
-    output_blip_to_screen(simulation_run);
-
-    /* Remove the packet from the buffer. */
-    buffer = (data->stations + this_packet->station_id)->buffer;
+    // Remove the packet from the station buffer
+    buffer = station->buffer;
     fifoqueue_get(buffer);
 
-    /* See if there is another packet at this station ready to transmit. */
+    // Add to data channel queue
+    fifoqueue_put(data_buffer, (void *) this_packet);
+
+    // If data channel is idle, start transmission immediately
+    if(get_channel_state(data->data_channel) == IDLE && 
+       fifoqueue_size(data_buffer) == 1) {
+      fifoqueue_get(data_buffer);  // Remove from queue to start transmission
+      schedule_data_transmission_start_event(simulation_run, now, (void *) this_packet);
+    }
+
+    // See if there is another packet at this station ready to reserve
     if(fifoqueue_size(buffer) > 0) {
       next_packet = (Packet_Ptr) fifoqueue_see_front(buffer);
       
-      /* Calculate next slot boundary + EPSILON */
-      next_slot = SLOT_DURATION * ceil(now / SLOT_DURATION) + EPSILON;
+      // Calculate next slot boundary
+      next_slot = SLOT_DURATION_XR * (floor(now / SLOT_DURATION_XR) + 1.0);
       
       schedule_transmission_start_event(simulation_run, next_slot, (void *) next_packet);
     }
-
-    /* Free the packet's memory. */
-    xfree(this_packet);
   }
 
   /* Clean up the channel state. */

@@ -27,13 +27,15 @@
 
 /*******************************************************************************/
 
-#define NUMBER_OF_STATIONS 5
+#define NUMBER_OF_STATIONS 10
 #define MEAN_PACKET_DURATION 1      /* normalized packet Tx time */
-#define PACKET_ARRIVAL_RATE 0.25     /* packets per Tx time */
+#define PACKET_ARRIVAL_RATE 0.5     /* packets per Tx time */
 #define MEAN_BACKOFF_DURATION 10    /* in units of packet transmit time, Tx */
-#define SLOT_DURATION 1.02          /* slot duration in Tx time units */
+#define SLOT_DURATION 1.02         /* slot duration in Tx time units */
 #define EPSILON 0.01                /* guard time in Tx time units */
-#define RUNLENGTH 5000000
+#define MEAN_DATA_PACKET_DURATION 1.6   /* mean data packet duration X in seconds */
+#define SLOT_DURATION_XR 0.1            /* reservation mini-slot duration Xr in seconds */
+#define RUNLENGTH 500000
 #define BLIPRATE 50000
 
 /* Comma separated list of random seeds to run. */

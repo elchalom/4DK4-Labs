@@ -27,6 +27,7 @@
 #include "packet_duration.h"
 #include "packet_transmission.h"
 #include "packet_arrival.h"
+#include "data_transmission.h"
 
 /*******************************************************************************/
 
@@ -60,35 +61,27 @@ packet_arrival_event(Simulation_Run_Ptr simulation_run, void* dummy_ptr)
   data = (Simulation_Run_Data_Ptr) simulation_run_data(simulation_run);
   data->arrival_count++;
 
-  /* Randomly pick the station that this packet is arriving to. Note
-     that randomly splitting a Poisson process creates multiple
-     independent Poisson processes.*/
   random_station_id = (int) floor(uniform_generator()*NUMBER_OF_STATIONS);
   station = data->stations + random_station_id;
 
   new_packet = (Packet_Ptr) xmalloc(sizeof(Packet));
   new_packet->arrive_time = now;
-  new_packet->service_time = get_packet_duration();
+  new_packet->service_time = get_data_packet_duration();
   new_packet->status = WAITING;
   new_packet->collision_count = 0;
   new_packet->station_id = random_station_id;
 
-  /* Put the packet in the buffer at that station. */
   stn_buffer = station->buffer;
   fifoqueue_put(stn_buffer, (void *) new_packet);
 
-  /* If this is the only packet at the station, transmit it (i.e., the
-     ALOHA protocol). It stays in the queue either way. */
   if(fifoqueue_size(stn_buffer) == 1) {
-    /* Calculate next slot boundary + EPSILON for slotted ALOHA */
-    next_slot = SLOT_DURATION * ceil(now / SLOT_DURATION) + EPSILON;
-    /* Transmit the packet at the next slot boundary. */
+    // Calculate next mini-slot boundary for reservation
+    next_slot = SLOT_DURATION_XR * (floor(now / SLOT_DURATION_XR) + 1.0);
     schedule_transmission_start_event(simulation_run, next_slot, (void *) new_packet);
   }
 
-  /* Schedule the next packet arrival. */
   schedule_packet_arrival_event(simulation_run, 
-        now + exponential_generator((double) 1/PACKET_ARRIVAL_RATE));
+        now + exponential_generator((double) 1.0/PACKET_ARRIVAL_RATE));
 }
 
 

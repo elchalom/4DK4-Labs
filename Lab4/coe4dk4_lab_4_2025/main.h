@@ -67,6 +67,8 @@ typedef struct _simulation_run_data_
 {
   Station_Ptr stations;
   Channel_Ptr channel;
+  Channel_Ptr data_channel; //separate data channel
+  Buffer_Ptr data_channel_queue; //FCFS queue for data transmission]
   long int blip_counter;
   long int arrival_count;
   long int packets_processed;
