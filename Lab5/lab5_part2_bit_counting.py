@@ -462,53 +462,6 @@ def vary_output_rate():
     print("\nPlot saved as 'lab5_part2_output_rate.png'")
     return results
 
-
-def analyze_results():
-    """
-    Analyze and explain observations from bit-counting leaky bucket
-    """
-    print("\n" + "="*70)
-    print("ANALYSIS AND OBSERVATIONS - BIT-COUNTING LEAKY BUCKET")
-    print("="*70)
-    
-    print("\nExperiment 1: Clock Period Effect")
-    print("-" * 70)
-    print("Justification for clock period choice:")
-    print("  • Should be comparable to average packet transmission time")
-    print("  • Average packet size = 1500 bits, at R=1Mbps: T_pkt = 1.5ms")
-    print("  • Choose T in range [1ms, 10ms] for reasonable operation")
-    print("  • Too small T: Overhead from frequent clock ticks")
-    print("  • Too large T: Cannot utilize full bandwidth (n might be large")
-    print("    but packets smaller than n are transmitted inefficiently)")
-    print("\nObservations:")
-    print("  • Loss rate generally low when T is moderate")
-    print("  • Output rate approaches arrival rate for reasonable T")
-    print("  • Very large T can cause inefficiency if n >> packet sizes")
-    
-    print("\n\nExperiment 2: Effect of n (Bits per Tick)")
-    print("-" * 70)
-    print("  • n = R × T determines how many bits can be sent per tick")
-    print("  • When n < min(packet_size), some packets cannot be sent")
-    print("  • When n ≥ max(packet_size), multiple packets can be sent per tick")
-    print("  • Loss rate decreases as n increases (more capacity)")
-    print("  • Output rate limited by min(R, arrival_rate)")
-    
-    print("\n\nExperiment 3: Output Rate R Effect")
-    print("-" * 70)
-    print("  • Similar to original leaky bucket behavior")
-    print("  • When R < arrival_rate: High loss, output = R")
-    print("  • When R ≥ arrival_rate: Low loss, output ≈ arrival_rate")
-    print("  • Critical threshold around R = λ × average_packet_size")
-    
-    print("\n\nKey Differences from Original Leaky Bucket:")
-    print("-" * 70)
-    print("  • Bit-counting allows multiple small packets per tick")
-    print("  • More efficient bandwidth utilization for variable packet sizes")
-    print("  • Residual bits lost at each tick (slight inefficiency)")
-    print("  • Better suited for networks with heterogeneous packet sizes")
-    print("="*70)
-
-
 if __name__ == "__main__":
     print("="*70)
     print("LAB 5 - PART 2: BIT-COUNTING LEAKY BUCKET")
@@ -518,9 +471,6 @@ if __name__ == "__main__":
     results_clock = vary_clock_period()
     results_n = vary_n_bits()
     results_rate = vary_output_rate()
-    
-    # Analyze results
-    analyze_results()
     
     print("\n" + "="*70)
     print("PART 2 COMPLETE!")
